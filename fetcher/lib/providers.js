@@ -1,7 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const AWS = require('aws-sdk');
-const { VERBOSE, gzip, unzip } = require('./utils');
+const {
+    VERBOSE,
+    gzip,
+    unzip,
+    putObject,
+} = require('./utils');
 
 const s3 = new AWS.S3({
     maxRetries: 10
@@ -74,13 +79,14 @@ class Providers {
         }
 
         const compressedString = await gzip(newData);
-        await s3.putObject({
-            Bucket,
-            Key,
-            Body: compressedString,
-            ContentType: 'application/json',
-            ContentEncoding: 'gzip'
-        }).promise();
+        await putObject(newData, Key);
+        // await s3.putObject({
+        //     Bucket,
+        //     Key,
+        //     Body: compressedString,
+        //     ContentType: 'application/json',
+        //     ContentEncoding: 'gzip'
+        // }).promise();
         if (VERBOSE) console.log(`ok - station: ${providerStation}`);
     }
 
@@ -98,14 +104,15 @@ class Providers {
         const Bucket = process.env.BUCKET;
         const filename = id || `${Math.floor(Date.now() / 1000)}-${Math.random().toString(36).substring(8)}`;
         const Key = `${process.env.STACK}/measures/${provider}/${filename}.csv.gz`;
-        const compressedString = await gzip(measures.csv());
-        return s3.putObject({
-            Bucket,
-            Key,
-            Body: compressedString,
-            ContentType: 'text/csv',
-            ContentEncoding: 'gzip'
-        }).promise();
+        //const compressedString = await gzip(measures.csv());
+        return putObject(measures, Key);
+        // return s3.putObject({
+        //     Bucket,
+        //     Key,
+        //     Body: compressedString,
+        //     ContentType: 'text/csv',
+        //     ContentEncoding: 'gzip'
+        // }).promise();
     }
 }
 

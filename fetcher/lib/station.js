@@ -49,7 +49,7 @@ class SensorNode {
       const k = this.map[key] || key;
       if(k) this[k] = value;
     }
-    if (VERBOSE) console.debug('Created new sensor node', this.sensor_node_id);
+      if (VERBOSE) console.debug('Created new sensor node', this.sensor_node_id, this.sensor_node_source_name);
   }
 
   addSensor(obj) {
