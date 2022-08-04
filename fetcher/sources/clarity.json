@@ -2,6 +2,7 @@
   "schema": "v1",
   "provider": "clarity",
   "frequency": "hour",
+  "name": "clarity",
   "meta": {
     "url": "https://clarity-data-api.clarity.io",
     "spreadsheetId": "10EO8WkUNOtx-4X5K3GETyY0VTW3_PDuMwPYbPthytGo"
