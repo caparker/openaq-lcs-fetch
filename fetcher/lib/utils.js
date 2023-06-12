@@ -265,8 +265,18 @@ const fetchFileGoogleBucket = async file => {
 	    .file(file.path)
 	    .createReadStream() //stream is created
       .pipe(stripBomStream.default())
-      .pipe(csv())
-      .on('data', row => data.push(row))
+      .pipe(csv({
+        // newline: '\n\r',
+        // mapHeaders: ({ header }) => {
+        //   return header.replace(/\r/g, '');
+        // },
+        // mapValues: ({ header, index, value }) => {
+        //   return value.replace(/\r/g, '');
+        // }
+      }))
+      .on('data', row => {
+        return data.push(row);
+      })
       .on('end', () => {
 	      resolve(data);
       });

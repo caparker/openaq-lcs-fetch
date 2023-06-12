@@ -35,66 +35,23 @@ class Measurand {
     }
 
     /**
-     * Given a map of lookups from an input parameter (i.e. how a data provider
-     * identifies a measurand) to a tuple of a measurand parameter (i.e. how we
-     * identify a measurand internally) and a measurand unit, generate an array
+     * reshapes the parameters
+     * use to look things up in the database but no reason to do that
      * Measurand objects that are supported by the OpenAQ API.
      *
      * @param {*} lookups, e.g. {'CO': ['co', 'ppb'] }
      * @returns { Measurand[] }
      */
     static async getSupportedMeasurands(lookups) {
-      // Fetch from API
-      const supportedMeasurandParameters = [];
-      const baseurl = new URL('/v2/parameters', process.env.API_URL || 'https://api.openaq.org');
-      if (VERBOSE) console.debug(`Getting Supported Measurands - ${baseurl}`);
-      let morePages;
-      let page = 1;
-        do {
-            const url = new URL(
-              '/v2/parameters',
-              baseurl,
-            );
-          url.searchParams.append('page', page++);
-          const {
-            body: { meta, results }
-          } = await request({
-            json: true,
-            method: 'GET',
-            url
-          });
-
-          if(!results) throw new Error(`Could not connect to ${baseurl}`);
-
-          for (const { name } of results) {
-            supportedMeasurandParameters.push(name);
-          }
-          morePages = meta.found > meta.page * meta.limit;
-        } while (morePages);
-        if (VERBOSE)
-            console.debug(
-              `Fetched ${supportedMeasurandParameters.length} supported measurement parameters from ${baseurl}.`
-            );
-
-      // Filter provided lookups
-        const supportedLookups = Object.entries(lookups).filter(
-            // eslint-disable-next-line no-unused-vars
-            ([input_param, [measurand_parameter, measurand_unit]]) =>
-                supportedMeasurandParameters.includes(measurand_parameter)
-        );
-
-        if (!supportedLookups.length) throw new Error('No measurands supported.');
-        if (VERBOSE) {
-          Object.values(lookups)
-            .map(([measurand_parameter]) => measurand_parameter)
-            .filter((measurand_parameter) => !supportedMeasurandParameters.includes(measurand_parameter))
-            .map((measurand_parameter) => console.warn(`ignoring unsupported parameter: ${measurand_parameter}`));
-        }
-
-        return supportedLookups.map(
-            ([input_param, [parameter, unit]]) =>
-                new Measurand({ input_param, parameter, unit })
-        );
+      // Assume they are all supported
+      const m = [];
+      for (const [k, v] of Object.entries(lookups)) {
+        const input_param = k;
+        const parameter = v[0];
+        const unit = v[1];
+        m.push(new Measurand({ input_param, parameter, unit }));
+      };
+      return m;
     }
 
     /**

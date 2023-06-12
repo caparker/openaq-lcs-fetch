@@ -51,26 +51,27 @@ var versions = {}; // for tracking versions
 var stations = {}; // for keeping track of new stations
 var sensors = {};  // for tracking new sensors
 var measures_list = [];
+var sep = "/";
 
 
 /**
  * Build sensor ID from a given sensor node ID and measurand parameter.
  *
- * @param {string} sourceId
+ * @param {string} sourceName
  * @param {string} sensorNodeId
  * @param {string} measurandParameter
  *
  * @returns {string}
  */
-function getRootSensorId(sourceId, sensorNodeId, measurandParameter) {
-  return `${sourceId}-${sensorNodeId}-${measurandParameter}`;
+function getRootSensorId(sourceName, sensorNodeId, measurandParameter) {
+  return `${sourceName}${sep}${sensorNodeId}${sep}${measurandParameter}`;
 }
 
 
 /**
  * Build sensor ID from a given sensor node ID and measurand parameter.
  *
- * @param {string} sourceId
+ * @param {string} sourceName
  * @param {string} sensorNodeId
  * @param {string} measurandParameter
  * @param {string} lifeCycle
@@ -78,15 +79,15 @@ function getRootSensorId(sourceId, sensorNodeId, measurandParameter) {
  *
  * @returns {string}
  */
-function getSensorId(sourceId, sensorNodeId, measurandParameter, lifeCycle, versionDate) {
+function getSensorId(sourceName, sensorNodeId, measurandParameter, lifeCycle, versionDate) {
   const lifeCycleId = !!lifeCycle
-        ? `-${lifeCycle}`
+        ? `${sep}${lifeCycle}`
         : '';
   // if no lifecyle value is provided we should assume this is raw data
   const versionId = versionDate && !!lifeCycle
-        ? `-${versionDate}`
+        ? `${sep}${versionDate}`
         : '';
-  return `${sourceId}-${sensorNodeId}-${measurandParameter}${lifeCycleId}${versionId}`;
+  return `${sourceName}${sep}${sensorNodeId}${sep}${measurandParameter}${lifeCycleId}${versionId}`;
 }
 
 /**
@@ -179,7 +180,7 @@ async function processor(source) {
 async function processFile({ file, data, measurands }) {
   if (VERBOSE) console.debug('Processing file', file.path);
   const measures = new Measures(FixedMeasure, file);
-  const sourceId = 'versioning';
+  const sourceName = 'versioning';
 
   const undefines = [undefined, null, 'NaN', 'NA'];
 
@@ -189,9 +190,9 @@ async function processFile({ file, data, measurands }) {
   // based on the fields that are available in the array/row
   for(const row of data) {
     // every row we encounter has to include the station/location info
-    if(!row.location) throw new Error('No location field found');
-    if (VERBOSE) console.log(`Processing location: ${row.location}`, row);
-    let sensorNodeId = row.location;
+    //if (VERBOSE) console.debug(`Processing location: ${row.location}`, row);
+    let sensorNodeId = row.source_id || row.location;
+    if(!sensorNodeId) throw new Error('No location field found. Please include either a source_id or location field.');
     let station = stations[sensorNodeId];
 
     // Compile the station information and check if it exists
@@ -202,7 +203,7 @@ async function processFile({ file, data, measurands }) {
       station = new SensorNode({
         sensor_node_id: sensorNodeId,
         sensor_node_site_name: sensorNodeId,
-        sensor_node_source_name: sourceId,
+        sensor_node_source_name: sourceName,
         sensor_node_geometry: !undefines.includes(row.lat) ? [row.lng, row.lat] : null,
         ...row,
       });
@@ -226,9 +227,9 @@ async function processFile({ file, data, measurands }) {
 
       // build the sensor id
       const sensorId = getSensorId(
-        sourceId,
+        sourceName,
         sensorNodeId,
-        measurand.parameter,
+        `${measurand.parameter}-${measurand.unit}`,
         row.lifecycle,
         row.version_date,
       );
@@ -239,7 +240,7 @@ async function processFile({ file, data, measurands }) {
         sensor = new Sensor({
           sensor_id: sensorId,
           measurand_parameter: measurand.parameter,
-          measurand_unit: measurand.normalized_unit,
+          measurand_unit: measurand.unit,
           ...row,
         });
         station.addSensor(sensor);
@@ -255,7 +256,7 @@ async function processFile({ file, data, measurands }) {
         if(!versions[sensorId]) {
           versions[sensorId] = new Version({
             parent_sensor_id: getSensorId(
-              sourceId,
+              sourceName,
               sensorNodeId,
               measurand.parameter
             ),
@@ -265,7 +266,7 @@ async function processFile({ file, data, measurands }) {
 		        parameter: measurand.parameter,
             filename: file.name,
             readme: row.readme,
-            provider: sourceId,
+            provider: sourceName,
           });
         }
       }

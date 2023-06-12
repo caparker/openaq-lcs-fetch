@@ -19,7 +19,7 @@
     "rh": ["relativehumidity", "%"],
     "so2": ["so2", "ppb"],
     "temp": ["temperature", "c"],
-    "ws": ["wind_speed", "m/s"],
+    "ws": ["wind_speed", "ms"],
     "wd": ["wind_direction", "deg"],
     "bc": ["bc","ppb"],
     "ec": ["ec","ppb"],

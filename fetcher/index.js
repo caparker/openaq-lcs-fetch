@@ -8,6 +8,7 @@ if (require.main === module) {
     handler();
 }
 
+
 async function handler(event) {
     try {
         if (!process.env.SOURCE && !event)
